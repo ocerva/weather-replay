@@ -2,7 +2,6 @@
 
 import { useRef, useState } from "react";
 import { Playfair_Display } from "next/font/google";
-import html2canvas from "html2canvas";
 import {
   Bar,
   BarChart,
@@ -31,7 +30,8 @@ type WeatherData = {
 
 type Place = {
   name: string;
-  country: string;
+  country?: string;
+  country_code?: string;
   admin1?: string;
   latitude: number;
   longitude: number;
@@ -47,6 +47,7 @@ type ChartDataItem = {
 export default function Home() {
   const [city, setCity] = useState("");
   const [citySuggestions, setCitySuggestions] = useState<Place[]>([]);
+  const [selectedPlace, setSelectedPlace] = useState<Place | null>(null);
   const [date, setDate] = useState("");
   const [compareDate, setCompareDate] = useState("");
   const [weather, setWeather] = useState<WeatherData | null>(null);
@@ -56,7 +57,6 @@ export default function Home() {
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
-  const shareCardRef = useRef<HTMLDivElement | null>(null);
   const [showShareCard, setShowShareCard] = useState(false);
   const [language, setLanguage] = useState("en");
 
@@ -146,7 +146,7 @@ const t = translations[language as keyof typeof translations];
   const suggestionBox = "bg-white border border-gray-200 text-slate-900";
 
   const searchCities = async (searchValue: string) => {
-    setCity(searchValue);
+    setCity(searchValue);setSelectedPlace(null);
 
     if (searchValue.length < 2) {
       setCitySuggestions([]);
@@ -154,15 +154,26 @@ const t = translations[language as keyof typeof translations];
     }
 
     const response = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${searchValue}&count=5`
+      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(searchValue)}&count=5`
     );
 
     const data = await response.json();
     setCitySuggestions(data.results || []);
   };
 
+  const formatPlaceName = (location: Place) => {
+    return [location.name, location.admin1, location.country || location.country_code]
+      .filter(Boolean)
+      .join(", ");
+  };
+
+  const createSlug = (value: string) => {
+    return value.toLowerCase().split(" ").join("-");
+  };
+
   const selectCitySuggestion = (suggestion: Place) => {
-    setCity(`${suggestion.name}, ${suggestion.country}`);
+    setSelectedPlace(suggestion);
+    setCity(formatPlaceName(suggestion));
     setCitySuggestions([]);
   };
 
@@ -176,7 +187,7 @@ const t = translations[language as keyof typeof translations];
 
   const handleShare = async () => {
     const shareText = place
-      ? `Check out this historical weather comparison for ${place.name} on WeatherReplay.`
+      ? `Check out this historical weather comparison for ${formatPlaceName(place)} on WeatherReplay.`
       : "Check out WeatherReplay, a modern historical weather comparison app.";
 
     const shareData = {
@@ -199,28 +210,137 @@ const t = translations[language as keyof typeof translations];
     }
   };
 
-  const handleDownloadCard = async () => {
-    if (!shareCardRef.current || !place || !weather) return;
+  const handleDownloadCard = () => {
+    if (!place || !weather) return;
 
     try {
-      const canvas = await html2canvas(shareCardRef.current, {
-        scale: 2,
-        backgroundColor: null,
-      });
+      setShareMessage("Preparing image...");
 
-      const image = canvas.toDataURL("image/png");
+      const canvas = document.createElement("canvas");
+      canvas.width = 1080;
+      canvas.height = 1600;
 
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const gradient = ctx.createLinearGradient(0, 0, 1080, 1600);
+      gradient.addColorStop(0, "#7dd3fc");
+      gradient.addColorStop(0.5, "#818cf8");
+      gradient.addColorStop(1, "#020617");
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, 1080, 1600);
+
+      const glowOne = ctx.createRadialGradient(120, 120, 0, 120, 120, 520);
+      glowOne.addColorStop(0, "rgba(255,255,255,0.45)");
+      glowOne.addColorStop(1, "rgba(255,255,255,0)");
+      ctx.fillStyle = glowOne;
+      ctx.fillRect(0, 0, 1080, 1600);
+
+      const glowTwo = ctx.createRadialGradient(960, 1450, 0, 960, 1450, 620);
+      glowTwo.addColorStop(0, "rgba(59,130,246,0.5)");
+      glowTwo.addColorStop(1, "rgba(59,130,246,0)");
+      ctx.fillStyle = glowTwo;
+      ctx.fillRect(0, 0, 1080, 1600);
+
+      ctx.fillStyle = "rgba(255,255,255,0.14)";
+      roundRect(ctx, 70, 70, 940, 1460, 70);
+      ctx.fill();
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 48px Georgia, serif";
+      ctx.fillText("🌦️ WeatherReplay", 120, 160);
+
+      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      roundRect(ctx, 760, 112, 190, 58, 29);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 26px Arial";
+      ctx.fillText("Historical", 790, 150);
+
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.font = "700 32px Arial";
+      ctx.fillText(weather.daily.time[0], 120, 300);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 92px Georgia, serif";
+      ctx.fillText(place.name, 120, 410);
+
+      ctx.fillStyle = "rgba(255,255,255,0.82)";
+      ctx.font = "400 42px Arial";
+      ctx.fillText(place.country || place.country_code || "", 120, 470);
+
+      ctx.textAlign = "center";
+      ctx.font = "160px Arial";
+      ctx.fillText(getWeatherEmoji(weather.daily.weathercode[0]), 540, 750);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 54px Arial";
+      ctx.fillText(getWeatherDescription(weather.daily.weathercode[0]), 540, 850);
+
+      ctx.font = "900 150px Arial";
+      ctx.fillText(`${weather.daily.temperature_2m_max[0]}°C`, 540, 1010);
+
+      ctx.fillStyle = "rgba(255,255,255,0.72)";
+      ctx.font = "400 30px Arial";
+      ctx.fillText("Max temperature", 540, 1060);
+
+      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(255,255,255,0.16)";
+      roundRect(ctx, 120, 1220, 390, 180, 38);
+      ctx.fill();
+      roundRect(ctx, 570, 1220, 390, 180, 38);
+      ctx.fill();
+
+      ctx.fillStyle = "rgba(255,255,255,0.65)";
+      ctx.font = "700 26px Arial";
+      ctx.fillText("RAIN", 160, 1280);
+      ctx.fillText("WIND", 610, 1280);
+
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 52px Arial";
+      ctx.fillText(`${weather.daily.precipitation_sum[0]} mm`, 160, 1360);
+      ctx.fillText(`${weather.daily.windspeed_10m_max[0]} km/h`, 610, 1360);
+
+      ctx.fillStyle = "rgba(255,255,255,0.7)";
+      ctx.font = "400 28px Arial";
+      ctx.fillText("weatherreplay.app", 120, 1500);
+
+      const imageUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
-      link.href = image;
-      link.download = `weatherreplay-${place.name.toLowerCase()}-${weather.daily.time[0]}.png`;
+      link.href = imageUrl;
+      link.download = `weatherreplay-${createSlug(place.name)}-${weather.daily.time[0]}.png`;
+      document.body.appendChild(link);
       link.click();
-    } catch {
-      setShareMessage("Could not download image");
+      document.body.removeChild(link);
 
-      setTimeout(() => {
-        setShareMessage("");
-      }, 2500);
+      setShareMessage("Image downloaded");
+      setTimeout(() => setShareMessage(""), 2500);
+    } catch (downloadError) {
+      console.error(downloadError);
+      setShareMessage("Could not download image");
+      setTimeout(() => setShareMessage(""), 4000);
     }
+  };
+
+  const roundRect = (
+    ctx: CanvasRenderingContext2D,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number
+  ) => {
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
   };
 
   const handleCheckWeather = async () => {
@@ -235,20 +355,27 @@ const t = translations[language as keyof typeof translations];
     setShowShareCard(false);
 
     try {
-      const geoResponse = await fetch(
-        `https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`
-      );
+      let location = selectedPlace;
 
-      const geoData = await geoResponse.json();
+if (!location) {
+  const citySearchName = city.split(",")[0].trim();
 
-      if (!geoData.results) {
-        setError("City not found");
-        setLoading(false);
-        return;
-      }
+  const geoResponse = await fetch(
+    `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(citySearchName)}&count=1`
+  );
 
-      const location = geoData.results[0];
-      setPlace(location);
+  const geoData = await geoResponse.json();
+
+  if (!geoData.results || geoData.results.length === 0) {
+    setError("City not found");
+    setLoading(false);
+    return;
+  }
+
+  location = geoData.results[0];
+}
+
+setPlace(location);
 
       const weatherData = await fetchWeather(location, date);
       setWeather(weatherData);
@@ -445,7 +572,10 @@ const t = translations[language as keyof typeof translations];
                     <span className="text-xl">📍</span>
                     <span>
                       <strong>{suggestion.name}</strong>
-                      {suggestion.admin1 ? `, ${suggestion.admin1}` : ""}, {suggestion.country}
+                      {suggestion.admin1 ? `, ${suggestion.admin1}` : ""}
+                      {suggestion.country || suggestion.country_code
+                        ? `, ${suggestion.country || suggestion.country_code}`
+                        : ""}
                     </span>
                   </button>
                 ))}
@@ -532,6 +662,7 @@ const t = translations[language as keyof typeof translations];
               <button
                 key={exampleCity}
                 onClick={() => {
+                  setSelectedPlace(null);
                   setCity(exampleCity);
                   window.scrollTo({ top: 0, behavior: "smooth" });
                 }}
@@ -559,7 +690,7 @@ const t = translations[language as keyof typeof translations];
             </p>
 
             <h2 className="mb-4 text-3xl font-bold">
-              {place.name}, {place.country}
+              {formatPlaceName(place)}
             </h2>
 
             <div className="flex flex-col gap-2 text-lg">
@@ -628,11 +759,28 @@ const t = translations[language as keyof typeof translations];
           </div>
 
           <div
-            ref={shareCardRef}
-            className="mx-auto max-w-sm overflow-hidden rounded-[2rem] bg-gradient-to-br from-sky-300 via-indigo-400 to-slate-950 p-1 shadow-2xl shadow-blue-500/20"
+            className="mx-auto max-w-sm overflow-hidden rounded-[2rem] p-1"
+            style={{
+              background: "linear-gradient(135deg, #7dd3fc 0%, #818cf8 50%, #020617 100%)",
+              boxShadow: "0 25px 50px rgba(37, 99, 235, 0.2)",
+            }}
           >
-            <div className="relative min-h-[520px] rounded-[1.8rem] bg-white/15 p-7 text-white backdrop-blur-xl">
-              <div className="absolute inset-0 rounded-[1.8rem] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.45),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.45),transparent_35%)]" />
+            <div
+              className="relative min-h-[520px] rounded-[1.8rem] p-7"
+              style={{
+                background: "rgba(255, 255, 255, 0.16)",
+                backdropFilter: "blur(20px)",
+                WebkitBackdropFilter: "blur(20px)",
+                color: "#ffffff",
+              }}
+            >
+              <div
+                className="absolute inset-0 rounded-[1.8rem]"
+                style={{
+                  background:
+                    "radial-gradient(circle at top left, rgba(255,255,255,0.45), transparent 35%), radial-gradient(circle at bottom right, rgba(59,130,246,0.45), transparent 35%)",
+                }}
+              />
 
               <div className="relative z-10 flex h-full min-h-[466px] flex-col justify-between">
                 <div>
@@ -643,19 +791,27 @@ const t = translations[language as keyof typeof translations];
                         WeatherReplay
                       </span>
                     </div>
-                    <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">
+                    <span
+                      className="rounded-full px-3 py-1 text-xs font-semibold"
+                      style={{ background: "rgba(255, 255, 255, 0.2)" }}
+                    >
                       Historical
                     </span>
                   </div>
 
-                  <p className="text-sm uppercase tracking-[0.35em] text-white/70">
+                  <p
+                    className="text-sm uppercase tracking-[0.35em]"
+                    style={{ color: "rgba(255, 255, 255, 0.7)" }}
+                  >
                     {weather.daily.time[0]}
                   </p>
 
                   <h3 className={`${playfair.className} mt-3 text-5xl font-black leading-none`}>
                     {place.name}
                   </h3>
-                  <p className="mt-2 text-lg text-white/80">{place.country}</p>
+                  <p className="mt-2 text-lg" style={{ color: "rgba(255, 255, 255, 0.8)" }}>
+                    {place.country || place.country_code || ""}
+                  </p>
                 </div>
 
                 <div className="py-10 text-center">
@@ -668,18 +824,34 @@ const t = translations[language as keyof typeof translations];
                   <p className="mt-3 text-7xl font-black tracking-tight">
                     {weather.daily.temperature_2m_max[0]}°C
                   </p>
-                  <p className="mt-2 text-sm text-white/75">
+                  <p className="mt-2 text-sm" style={{ color: "rgba(255, 255, 255, 0.75)" }}>
                     Max temperature
                   </p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-white/15 p-4 backdrop-blur">
-                    <p className="text-xs uppercase tracking-widest text-white/60">Rain</p>
+                  <div
+                    className="rounded-2xl p-4"
+                    style={{ background: "rgba(255, 255, 255, 0.15)" }}
+                  >
+                    <p
+                      className="text-xs uppercase tracking-widest"
+                      style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                    >
+                      Rain
+                    </p>
                     <p className="mt-1 text-2xl font-black">{weather.daily.precipitation_sum[0]} mm</p>
                   </div>
-                  <div className="rounded-2xl bg-white/15 p-4 backdrop-blur">
-                    <p className="text-xs uppercase tracking-widest text-white/60">Wind</p>
+                  <div
+                    className="rounded-2xl p-4"
+                    style={{ background: "rgba(255, 255, 255, 0.15)" }}
+                  >
+                    <p
+                      className="text-xs uppercase tracking-widest"
+                      style={{ color: "rgba(255, 255, 255, 0.6)" }}
+                    >
+                      Wind
+                    </p>
                     <p className="mt-1 text-2xl font-black">{weather.daily.windspeed_10m_max[0]} km/h</p>
                   </div>
                 </div>
@@ -694,6 +866,10 @@ const t = translations[language as keyof typeof translations];
             >
               Download Share Card
             </button>
+
+            {shareMessage && (
+              <p className="text-sm font-semibold text-blue-500">{shareMessage}</p>
+            )}
 
             <p className={`max-w-xl text-center text-sm ${mutedText}`}>
               Save your WeatherReplay card as an image and share it anywhere.
