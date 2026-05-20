@@ -2,15 +2,6 @@
 
 import { useRef, useState } from "react";
 import { Playfair_Display } from "next/font/google";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
@@ -37,12 +28,6 @@ type Place = {
   longitude: number;
 };
 
-type ChartDataItem = {
-  date: string;
-  maxTemp: number;
-  rain: number;
-  wind: number;
-};
 
 export default function Home() {
   const [city, setCity] = useState("");
@@ -462,23 +447,6 @@ if (!location) {
     return `${temperatureText}, ${rainText}`;
   };
 
-  const chartData: ChartDataItem[] =
-    weather && compareWeather
-      ? [
-          {
-            date: weather.daily.time[0],
-            maxTemp: weather.daily.temperature_2m_max[0],
-            rain: weather.daily.precipitation_sum[0],
-            wind: weather.daily.windspeed_10m_max[0],
-          },
-          {
-            date: compareWeather.daily.time[0],
-            maxTemp: compareWeather.daily.temperature_2m_max[0],
-            rain: compareWeather.daily.precipitation_sum[0],
-            wind: compareWeather.daily.windspeed_10m_max[0],
-          },
-        ]
-      : [];
 
   return (
     <main className={`min-h-screen flex flex-col items-center justify-start px-4 py-6 md:p-10 ${pageBackground}`}>
@@ -885,14 +853,53 @@ if (!location) {
       )}
 
       {weather && compareWeather && (
-        <div className={`${cardBackground} mt-10 w-full max-w-5xl rounded-2xl p-6 shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 md:p-8`}>
-          <h2 className="mb-6 text-center text-3xl font-black tracking-tight md:text-4xl">
-            Visual Comparison
-          </h2>
+        <div className={`${cardBackground} mt-10 w-full max-w-5xl rounded-3xl p-6 shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 md:p-8`}>
+          <div className="mb-8 text-center">
+            <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">
+              Comparison
+            </p>
+            <h2 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
+              Quick Visual Snapshot
+            </h2>
+            <p className={`mx-auto mt-3 max-w-2xl text-sm md:text-base ${mutedText}`}>
+              A sleek side-by-side comparison between your selected dates.
+            </p>
+          </div>
 
-          <ChartSection title="🌡️ Max Temperature °C" dataKey="maxTemp" color="#f97316" chartData={chartData} />
-          <ChartSection title="🌧️ Rain/Snow mm" dataKey="rain" color="#3b82f6" chartData={chartData} />
-          <ChartSection title="💨 Max Wind km/h" dataKey="wind" color="#22c55e" chartData={chartData} isLast />
+          <div className="grid gap-5 md:grid-cols-3">
+            <MetricComparison
+              title="Temperature"
+              icon="🌡️"
+              unit="°C"
+              firstLabel={weather.daily.time[0]}
+              secondLabel={compareWeather.daily.time[0]}
+              firstValue={weather.daily.temperature_2m_max[0]}
+              secondValue={compareWeather.daily.temperature_2m_max[0]}
+              accent="#f97316"
+            />
+
+            <MetricComparison
+              title="Rain / Snow"
+              icon="🌧️"
+              unit="mm"
+              firstLabel={weather.daily.time[0]}
+              secondLabel={compareWeather.daily.time[0]}
+              firstValue={weather.daily.precipitation_sum[0]}
+              secondValue={compareWeather.daily.precipitation_sum[0]}
+              accent="#3b82f6"
+            />
+
+            <MetricComparison
+              title="Max Wind"
+              icon="💨"
+              unit="km/h"
+              firstLabel={weather.daily.time[0]}
+              secondLabel={compareWeather.daily.time[0]}
+              firstValue={weather.daily.windspeed_10m_max[0]}
+              secondValue={compareWeather.daily.windspeed_10m_max[0]}
+              accent="#22c55e"
+            />
+          </div>
         </div>
       )}
 
@@ -908,46 +915,84 @@ if (!location) {
   );
 }
 
-type ChartSectionProps = {
+
+type MetricComparisonProps = {
   title: string;
-  dataKey: "maxTemp" | "rain" | "wind";
-  color: string;
-  chartData: ChartDataItem[];
-  isLast?: boolean;
+  icon: string;
+  unit: string;
+  firstLabel: string;
+  secondLabel: string;
+  firstValue: number;
+  secondValue: number;
+  accent: string;
 };
 
-function ChartSection({ title, dataKey, color, chartData, isLast = false }: ChartSectionProps) {
-  return (
-    <div className={isLast ? "" : "mb-10"}>
-      <h3 className="mb-4 text-xl font-semibold">{title}</h3>
+function MetricComparison({
+  title,
+  icon,
+  unit,
+  firstLabel,
+  secondLabel,
+  firstValue,
+  secondValue,
+  accent,
+}: MetricComparisonProps) {
+  const maxValue = Math.max(Math.abs(firstValue), Math.abs(secondValue), 1);
 
-      <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={chartData}
-            margin={{ top: 10, right: 80, left: 80, bottom: 10 }}
-            barCategoryGap="15%"
-          >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-            <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-            <YAxis tick={{ fontSize: 12 }} />
-            <Tooltip
-              contentStyle={{
-                borderRadius: "16px",
-                border: "none",
-                backgroundColor: "rgba(15,23,42,0.9)",
-                color: "white",
-              }}
+  const firstWidth = `${Math.max((Math.abs(firstValue) / maxValue) * 100, 8)}%`;
+  const secondWidth = `${Math.max((Math.abs(secondValue) / maxValue) * 100, 8)}%`;
+
+  const difference = secondValue - firstValue;
+
+  return (
+    <div className="rounded-3xl border border-white/15 bg-white/10 p-5 shadow-lg shadow-black/5 backdrop-blur">
+      <div className="mb-5 flex items-center justify-between gap-3">
+        <div>
+          <p className="text-3xl">{icon}</p>
+          <h3 className="mt-2 text-xl font-black tracking-tight">{title}</h3>
+        </div>
+
+        <div
+          className="rounded-full px-3 py-1 text-sm font-bold text-white"
+          style={{ backgroundColor: accent }}
+        >
+          {difference > 0 ? "+" : ""}
+          {difference.toFixed(1)} {unit}
+        </div>
+      </div>
+
+      <div className="space-y-5">
+        <div>
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="font-semibold opacity-80">{firstLabel}</span>
+            <span className="font-black">
+              {firstValue} {unit}
+            </span>
+          </div>
+
+          <div className="h-3 overflow-hidden rounded-full bg-black/10">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: firstWidth, backgroundColor: accent, opacity: 0.55 }}
             />
-            <Bar
-              dataKey={dataKey}
-              fill={color}
-              radius={[8, 8, 0, 0]}
-              barSize={36}
-              animationDuration={1200}
+          </div>
+        </div>
+
+        <div>
+          <div className="mb-2 flex items-center justify-between text-sm">
+            <span className="font-semibold opacity-80">{secondLabel}</span>
+            <span className="font-black">
+              {secondValue} {unit}
+            </span>
+          </div>
+
+          <div className="h-3 overflow-hidden rounded-full bg-black/10">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: secondWidth, backgroundColor: accent }}
             />
-          </BarChart>
-        </ResponsiveContainer>
+          </div>
+        </div>
       </div>
     </div>
   );
