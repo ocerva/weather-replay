@@ -49,6 +49,71 @@ export default function Home() {
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
+  const [language, setLanguage] = useState("en");
+
+const translations = {
+  en: {
+    tagline: "Historical weather insights",
+    description:
+      "Compare historical weather conditions between different dates anywhere in the world with elegant visual insights.",
+    city: "City",
+    enterCity: "Enter city",
+    primaryDate: "Primary Date",
+    comparisonDate: "Comparison Date (Optional)",
+    checkWeather: "Check Weather",
+    loading: "Loading...",
+    share: "Share",
+    trustText: "All data is historical and sourced from reliable weather APIs.",
+    fetchingWeather: "Fetching historical weather",
+    searchingArchive: "Searching the archive and preparing your comparison...",
+    emptyTitle: "Start exploring weather history",
+    emptyDescription:
+      "Choose a city and a date to see what the weather was like. Add a comparison date to reveal differences with charts and insights.",
+    tryCity: "Try",
+  },
+
+  no: {
+    tagline: "Historiske værinnsikter",
+    description:
+      "Sammenlign historiske værforhold mellom ulike datoer hvor som helst i verden med elegante visuelle innsikter.",
+    city: "By",
+    enterCity: "Skriv inn by",
+    primaryDate: "Primær dato",
+    comparisonDate: "Sammenligningsdato (Valgfritt)",
+    checkWeather: "Sjekk vær",
+    loading: "Laster...",
+    share: "Del",
+    trustText: "Alle data er historiske og hentet fra pålitelige vær-API-er.",
+    fetchingWeather: "Henter historisk vær",
+    searchingArchive: "Søker i arkivet og forbereder sammenligningen din...",
+    emptyTitle: "Begynn å utforske værhistorikk",
+    emptyDescription:
+      "Velg en by og en dato for å se hvordan været var. Legg til en sammenligningsdato for å se forskjeller med grafer og innsikt.",
+    tryCity: "Prøv",
+  },
+
+  es: {
+    tagline: "Información meteorológica histórica",
+    description:
+      "Compara condiciones meteorológicas históricas entre diferentes fechas en cualquier parte del mundo con elegantes visualizaciones.",
+    city: "Ciudad",
+    enterCity: "Introduce una ciudad",
+    primaryDate: "Fecha principal",
+    comparisonDate: "Fecha de comparación (Opcional)",
+    checkWeather: "Consultar clima",
+    loading: "Cargando...",
+    share: "Compartir",
+    trustText: "Todos los datos son históricos y provienen de APIs meteorológicas fiables.",
+    fetchingWeather: "Buscando clima histórico",
+    searchingArchive: "Buscando en el archivo y preparando tu comparación...",
+    emptyTitle: "Empieza a explorar el historial del clima",
+    emptyDescription:
+      "Elige una ciudad y una fecha para ver cómo era el clima. Añade una fecha de comparación para ver diferencias con gráficos e información visual.",
+    tryCity: "Probar",
+  },
+};
+
+const t = translations[language as keyof typeof translations];
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const pageBackground = darkMode
@@ -250,25 +315,39 @@ export default function Home() {
 
   return (
     <main className={`min-h-screen flex flex-col items-center justify-start px-4 py-6 md:p-10 ${pageBackground}`}>
-      <header className={`${cardBackground} mb-10 flex w-full max-w-6xl items-center justify-between rounded-2xl px-4 py-3 shadow-xl shadow-black/10 md:px-6`}>
+      <header className={`${cardBackground} mb-10 flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 shadow-xl shadow-black/10 md:px-6`}>
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl shadow-lg">
             🌦️
           </div>
           <div>
             <p className="text-lg font-black leading-none tracking-tight">WeatherReplay</p>
-            <p className={`text-xs ${mutedText}`}>Historical weather insights</p>
+            <p className={`text-xs ${mutedText}`}>{t.tagline}</p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
+          <span className="text-lg">🌐</span>
+          <select
+            value={language}
+            onChange={(event) => setLanguage(event.target.value)}
+            className={`min-w-[74px] rounded-full px-3 py-2 text-sm font-bold shadow-sm ${
+              darkMode
+                ? "border border-gray-700 bg-gray-800 text-white"
+                : "border border-gray-300 bg-white text-gray-900"
+            }`}
+          >
+            <option value="en">EN</option>
+            <option value="no">NO</option>
+            <option value="es">ES</option>
+          </select>
           <button
             onClick={handleShare}
             className={`hidden rounded-full px-4 py-2 text-sm font-semibold transition md:block ${
               darkMode ? "bg-white/10 hover:bg-white/20" : "bg-white/80 hover:bg-white"
             }`}
           >
-            Share
+            {t.share}
           </button>
 
           <button
@@ -287,17 +366,17 @@ export default function Home() {
       </h1>
 
       <p className={`mb-10 max-w-2xl text-center text-lg leading-relaxed ${mutedText}`}>
-        Compare historical weather conditions between different dates anywhere in the world with elegant visual insights.
+      {t.description}
       </p>
 
       <div className={`${cardBackground} w-full max-w-md rounded-2xl p-6 shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 md:p-8`}>
         <div className="flex flex-col gap-4">
-          <label className="font-semibold">City</label>
+        <label className="font-semibold">{t.city}</label>
 
           <div>
             <input
               type="text"
-              placeholder="Enter city"
+              placeholder={t.enterCity}
               value={city}
               onChange={(event) => searchCities(event.target.value)}
               className={`${inputStyle} w-full rounded-xl p-4 text-lg`}
@@ -338,7 +417,7 @@ export default function Home() {
             )}
           </div>
 
-          <label className="mt-1 font-semibold">Primary Date</label>
+          <label className="mt-1 font-semibold">{t.primaryDate}</label>
           <input
             type="date"
             value={date}
@@ -346,7 +425,7 @@ export default function Home() {
             className={`${inputStyle} rounded-xl p-4`}
           />
 
-          <label className="font-semibold">Comparison Date (Optional)</label>
+          <label className="font-semibold">{t.comparisonDate}</label>
           <input
             type="date"
             value={compareDate}
@@ -359,7 +438,7 @@ export default function Home() {
             className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 p-4 text-white shadow-lg transition hover:scale-[1.02] hover:from-blue-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={loading}
           >
-            {loading ? "Loading..." : "Check Weather"}
+            {loading ? t.loading : t.checkWeather}
           </button>
         </div>
       </div>
@@ -367,7 +446,7 @@ export default function Home() {
       <div className="mt-6 flex flex-col items-center gap-3 text-center">
         <p className={`flex items-center gap-2 text-sm ${mutedText}`}>
           <span>🛡️</span>
-          All data is historical and sourced from reliable weather APIs.
+          {t.trustText}
         </p>
 
         <button
@@ -376,7 +455,7 @@ export default function Home() {
             darkMode ? "bg-white text-gray-900" : "bg-gray-900 text-white"
           }`}
         >
-          Share WeatherReplay
+          {t.share} WeatherReplay
         </button>
 
         {shareMessage && (
@@ -393,9 +472,9 @@ export default function Home() {
       {loading && (
         <div className={`${softCard} mt-8 w-full max-w-md rounded-2xl p-6 text-center shadow-xl shadow-black/10`}>
           <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
-          <h2 className="text-xl font-bold">Fetching historical weather</h2>
+          <h2 className="text-xl font-bold">{t.fetchingWeather}</h2>
           <p className={`mt-2 ${mutedText}`}>
-            Searching the archive and preparing your comparison...
+            {t.searchingArchive}
           </p>
         </div>
       )}
@@ -403,15 +482,15 @@ export default function Home() {
       {!loading && !weather && !error && (
         <div className={`${softCard} mt-8 w-full max-w-2xl rounded-2xl p-6 text-center shadow-xl shadow-black/10 md:p-8`}>
           <div className="mb-4 text-5xl">🌍</div>
-          <h2 className="text-2xl font-black tracking-tight">Start exploring weather history</h2>
+          <h2 className="text-2xl font-black tracking-tight">{t.emptyTitle}</h2>
           <p className={`mx-auto mt-3 max-w-xl ${mutedText}`}>
-            Choose a city and a date to see what the weather was like. Add a comparison date to reveal differences with charts and insights.
+            {t.emptyDescription}
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2 text-sm">
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try Oslo</span>
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try London</span>
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try Tokyo</span>
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try Madrid</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} Oslo</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} London</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} Tokyo</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} Madrid</span>
           </div>
         </div>
       )}
