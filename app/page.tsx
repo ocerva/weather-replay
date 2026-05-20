@@ -495,10 +495,23 @@ const t = translations[language as keyof typeof translations];
             {t.emptyDescription}
           </p>
           <div className="mt-5 flex flex-wrap justify-center gap-2 text-sm">
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} Oslo</span>
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} London</span>
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} Tokyo</span>
-            <span className={`${comparisonBox} rounded-full px-3 py-1`}>{t.tryCity} Madrid</span>
+            {[
+              "Oslo",
+              "London",
+              "Tokyo",
+              "Madrid",
+            ].map((exampleCity) => (
+              <button
+                key={exampleCity}
+                onClick={() => {
+                  setCity(exampleCity);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className={`${comparisonBox} rounded-full px-3 py-1 font-medium transition hover:scale-105 hover:bg-blue-500 hover:text-white`}
+              >
+                {t.tryCity} {exampleCity}
+              </button>
+            ))}
           </div>
         </div>
       )}
