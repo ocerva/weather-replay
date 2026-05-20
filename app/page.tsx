@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { Playfair_Display } from "next/font/google";
+import html2canvas from "html2canvas";
 import {
   Bar,
   BarChart,
@@ -55,6 +56,8 @@ export default function Home() {
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
+  const shareCardRef = useRef<HTMLDivElement | null>(null);
+  const [showShareCard, setShowShareCard] = useState(false);
   const [language, setLanguage] = useState("en");
 
 const translations = {
@@ -196,6 +199,30 @@ const t = translations[language as keyof typeof translations];
     }
   };
 
+  const handleDownloadCard = async () => {
+    if (!shareCardRef.current || !place || !weather) return;
+
+    try {
+      const canvas = await html2canvas(shareCardRef.current, {
+        scale: 2,
+        backgroundColor: null,
+      });
+
+      const image = canvas.toDataURL("image/png");
+
+      const link = document.createElement("a");
+      link.href = image;
+      link.download = `weatherreplay-${place.name.toLowerCase()}-${weather.daily.time[0]}.png`;
+      link.click();
+    } catch {
+      setShareMessage("Could not download image");
+
+      setTimeout(() => {
+        setShareMessage("");
+      }, 2500);
+    }
+  };
+
   const handleCheckWeather = async () => {
     if (!city || !date) {
       setError("Please enter a city and date");
@@ -205,6 +232,7 @@ const t = translations[language as keyof typeof translations];
     setError("");
     setLoading(true);
     setCompareWeather(null);
+    setShowShareCard(false);
 
     try {
       const geoResponse = await fetch(
@@ -574,6 +602,105 @@ const t = translations[language as keyof typeof translations];
           </div>
         )}
       </div>
+
+      {weather && place && (
+        <div className="mt-10 flex w-full max-w-5xl justify-center">
+          <button
+            onClick={() => setShowShareCard(!showShareCard)}
+            className="rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.03] hover:from-blue-500 hover:to-indigo-500"
+          >
+            {showShareCard ? "Hide Share Card" : "Create Share Card"}
+          </button>
+        </div>
+      )}
+
+      {showShareCard && weather && place && (
+        <div className={`${cardBackground} mt-8 w-full max-w-5xl rounded-3xl p-6 shadow-2xl shadow-black/20 md:p-8`}>
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-[0.3em] text-blue-500">
+                Share Preview
+              </p>
+              <h2 className="mt-2 text-3xl font-black tracking-tight">
+                Your WeatherReplay Card
+              </h2>
+            </div>
+          </div>
+
+          <div
+            ref={shareCardRef}
+            className="mx-auto max-w-sm overflow-hidden rounded-[2rem] bg-gradient-to-br from-sky-300 via-indigo-400 to-slate-950 p-1 shadow-2xl shadow-blue-500/20"
+          >
+            <div className="relative min-h-[520px] rounded-[1.8rem] bg-white/15 p-7 text-white backdrop-blur-xl">
+              <div className="absolute inset-0 rounded-[1.8rem] bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.45),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(59,130,246,0.45),transparent_35%)]" />
+
+              <div className="relative z-10 flex h-full min-h-[466px] flex-col justify-between">
+                <div>
+                  <div className="mb-8 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl">🌦️</span>
+                      <span className={`${playfair.className} text-xl font-black`}>
+                        WeatherReplay
+                      </span>
+                    </div>
+                    <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-semibold backdrop-blur">
+                      Historical
+                    </span>
+                  </div>
+
+                  <p className="text-sm uppercase tracking-[0.35em] text-white/70">
+                    {weather.daily.time[0]}
+                  </p>
+
+                  <h3 className={`${playfair.className} mt-3 text-5xl font-black leading-none`}>
+                    {place.name}
+                  </h3>
+                  <p className="mt-2 text-lg text-white/80">{place.country}</p>
+                </div>
+
+                <div className="py-10 text-center">
+                  <div className="text-8xl">
+                    {getWeatherEmoji(weather.daily.weathercode[0])}
+                  </div>
+                  <p className="mt-5 text-2xl font-bold">
+                    {getWeatherDescription(weather.daily.weathercode[0])}
+                  </p>
+                  <p className="mt-3 text-7xl font-black tracking-tight">
+                    {weather.daily.temperature_2m_max[0]}°C
+                  </p>
+                  <p className="mt-2 text-sm text-white/75">
+                    Max temperature
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-white/15 p-4 backdrop-blur">
+                    <p className="text-xs uppercase tracking-widest text-white/60">Rain</p>
+                    <p className="mt-1 text-2xl font-black">{weather.daily.precipitation_sum[0]} mm</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/15 p-4 backdrop-blur">
+                    <p className="text-xs uppercase tracking-widest text-white/60">Wind</p>
+                    <p className="mt-1 text-2xl font-black">{weather.daily.windspeed_10m_max[0]} km/h</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 flex flex-col items-center gap-4">
+            <button
+              onClick={handleDownloadCard}
+              className="rounded-full bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 text-sm font-bold text-white shadow-lg transition hover:scale-[1.03] hover:from-emerald-400 hover:to-green-500"
+            >
+              Download Share Card
+            </button>
+
+            <p className={`max-w-xl text-center text-sm ${mutedText}`}>
+              Save your WeatherReplay card as an image and share it anywhere.
+            </p>
+          </div>
+        </div>
+      )}
 
       {weather && compareWeather && (
         <div className={`${cardBackground} mt-10 w-full max-w-5xl rounded-2xl p-6 shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 md:p-8`}>
