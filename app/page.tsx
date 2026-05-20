@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { Playfair_Display } from "next/font/google";
 import {
   Bar,
   BarChart,
@@ -10,6 +11,11 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+});
 
 type WeatherData = {
   daily: {
@@ -321,7 +327,7 @@ const t = translations[language as keyof typeof translations];
             🌦️
           </div>
           <div>
-            <p className="text-lg font-black leading-none tracking-tight">WeatherReplay</p>
+            <p className={`${playfair.className} text-xl font-black leading-none tracking-tight`}>WeatherReplay</p>
             <p className={`text-xs ${mutedText}`}>{t.tagline}</p>
           </div>
         </div>
@@ -361,7 +367,7 @@ const t = translations[language as keyof typeof translations];
         </div>
       </header>
 
-      <h1 className="mb-4 text-center text-5xl font-black tracking-tight md:text-6xl">
+      <h1 className={`${playfair.className} mb-4 text-center text-6xl font-black tracking-tight md:text-7xl`}>
         WeatherReplay
       </h1>
 
@@ -569,7 +575,7 @@ const t = translations[language as keyof typeof translations];
       <footer className={`mt-14 pb-4 text-center text-sm ${mutedText}`}>
         <div className="mb-3 flex items-center justify-center gap-2">
           <span className="text-xl">🌦️</span>
-          <p className="font-bold">WeatherReplay</p>
+          <p className={`${playfair.className} font-bold`}>WeatherReplay</p>
         </div>
         <p className="mt-1">Historical weather comparisons powered by Open-Meteo data.</p>
         <p className="mt-1">Built as a modern weather history tool.</p>
