@@ -321,13 +321,13 @@ const t = translations[language as keyof typeof translations];
 
   return (
     <main className={`min-h-screen flex flex-col items-center justify-start px-4 py-6 md:p-10 ${pageBackground}`}>
-      <header className={`${cardBackground} mb-10 flex w-full max-w-6xl flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3 shadow-xl shadow-black/10 md:px-6`}>
+      <header className={`${cardBackground} mb-12 flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 rounded-3xl px-6 py-5 shadow-xl shadow-black/10 md:mb-10 md:rounded-2xl md:px-6 md:py-3`}>
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl shadow-lg">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl shadow-lg md:h-11 md:w-11">
             🌦️
           </div>
           <div>
-            <p className={`${playfair.className} text-xl font-black leading-none tracking-tight`}>WeatherReplay</p>
+            <p className={`${playfair.className} text-2xl font-black leading-none tracking-tight md:text-xl`}>WeatherReplay</p>
             <p className={`text-xs ${mutedText}`}>{t.tagline}</p>
           </div>
         </div>
@@ -367,12 +367,14 @@ const t = translations[language as keyof typeof translations];
         </div>
       </header>
 
-      <h1 className={`${playfair.className} mb-4 text-center text-6xl font-black tracking-tight md:text-7xl`}>
+      <h1 className={`${playfair.className} mb-4 max-w-full px-2 text-center text-[clamp(2.7rem,10vw,4.8rem)] font-black leading-none tracking-tight`}>
         WeatherReplay
       </h1>
 
-      <p className={`mb-10 max-w-2xl text-center text-lg leading-relaxed ${mutedText}`}>
-      {t.description}
+      <div className="mb-8 h-1.5 w-24 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600" />
+
+      <p className={`mb-10 max-w-2xl px-2 text-center text-lg leading-relaxed md:text-xl ${mutedText}`}>
+        {t.description}
       </p>
 
       <div className={`${cardBackground} w-full max-w-md rounded-2xl p-6 shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 md:p-8`}>
