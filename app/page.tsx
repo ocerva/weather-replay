@@ -25,6 +25,7 @@ type WeatherData = {
 type Place = {
   name: string;
   country: string;
+  admin1?: string;
   latitude: number;
   longitude: number;
 };
@@ -61,6 +62,8 @@ export default function Home() {
   const comparisonBox = darkMode
     ? "bg-white/10 border border-white/10"
     : "bg-white/60 border border-white/70";
+
+  const suggestionBox = "bg-white border border-gray-200 text-slate-900";
 
   const searchCities = async (searchValue: string) => {
     setCity(searchValue);
@@ -230,33 +233,51 @@ export default function Home() {
         <div className="flex flex-col gap-4">
           <label className="font-semibold">City</label>
 
-          <div className="relative">
+          <div>
             <input
               type="text"
               placeholder="Enter city"
               value={city}
               onChange={(event) => searchCities(event.target.value)}
-              className={`${inputStyle} w-full rounded-xl p-4`}
+              className={`${inputStyle} w-full rounded-xl p-4 text-lg`}
             />
 
             {citySuggestions.length > 0 && (
-              <div className={`absolute z-10 mt-2 w-full overflow-hidden rounded-xl shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 ${cardBackground}`}>
-                {citySuggestions.map((suggestion) => (
+              <div
+                className={`mt-3 w-full overflow-hidden rounded-2xl shadow-2xl shadow-black/30 ${suggestionBox}`}
+                style={{
+                  background: "#ffffff",
+                  backgroundColor: "#ffffff",
+                  opacity: 1,
+                  backdropFilter: "none",
+                  WebkitBackdropFilter: "none",
+                }}
+              >
+                {citySuggestions.map((suggestion, index) => (
                   <button
                     key={`${suggestion.name}-${suggestion.country}-${suggestion.latitude}`}
                     onClick={() => selectCitySuggestion(suggestion)}
-                    className={`block w-full px-4 py-3 text-left hover:bg-gray-200 ${
-                      darkMode ? "hover:bg-gray-800" : ""
+                    className={`flex w-full items-center gap-3 px-4 py-4 text-left text-slate-900 transition hover:bg-blue-50 ${
+                      index !== citySuggestions.length - 1 ? "border-b border-gray-200" : ""
                     }`}
+                    style={{
+                      background: "#ffffff",
+                      backgroundColor: "#ffffff",
+                      opacity: 1,
+                    }}
                   >
-                    {suggestion.name}, {suggestion.country}
+                    <span className="text-xl">📍</span>
+                    <span>
+                      <strong>{suggestion.name}</strong>
+                      {suggestion.admin1 ? `, ${suggestion.admin1}` : ""}, {suggestion.country}
+                    </span>
                   </button>
                 ))}
               </div>
             )}
           </div>
 
-          <label className="font-semibold">Primary Date</label>
+          <label className="mt-1 font-semibold">Primary Date</label>
           <input
             type="date"
             value={date}
@@ -281,6 +302,11 @@ export default function Home() {
           </button>
         </div>
       </div>
+
+      <p className={`mt-6 flex items-center gap-2 text-sm ${mutedText}`}>
+        <span>🛡️</span>
+        All data is historical and sourced from reliable weather APIs.
+      </p>
 
       {error && (
         <div className="mt-6 rounded-xl bg-red-100 p-4 text-red-700">
