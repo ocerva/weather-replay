@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -48,6 +48,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
+  const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const pageBackground = darkMode
     ? "bg-gradient-to-br from-gray-950 via-slate-900 to-black text-white"
@@ -62,6 +63,10 @@ export default function Home() {
   const comparisonBox = darkMode
     ? "bg-white/10 border border-white/10"
     : "bg-white/60 border border-white/70";
+
+  const softCard = darkMode
+    ? "bg-white/5 border border-white/10"
+    : "bg-white/50 border border-white/60";
 
   const suggestionBox = "bg-white border border-gray-200 text-slate-900";
 
@@ -127,6 +132,13 @@ export default function Home() {
         const compareData = await fetchWeather(location, compareDate);
         setCompareWeather(compareData);
       }
+
+      setTimeout(() => {
+        resultsRef.current?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }, 200);
     } catch {
       setError("Something went wrong while fetching the weather data");
     } finally {
@@ -314,7 +326,36 @@ export default function Home() {
         </div>
       )}
 
-      <div className="mt-10 flex w-full max-w-5xl flex-col justify-center gap-6 md:flex-row">
+      {loading && (
+        <div className={`${softCard} mt-8 w-full max-w-md rounded-2xl p-6 text-center shadow-xl shadow-black/10`}>
+          <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-500 border-t-transparent" />
+          <h2 className="text-xl font-bold">Fetching historical weather</h2>
+          <p className={`mt-2 ${mutedText}`}>
+            Searching the archive and preparing your comparison...
+          </p>
+        </div>
+      )}
+
+      {!loading && !weather && !error && (
+        <div className={`${softCard} mt-8 w-full max-w-2xl rounded-2xl p-6 text-center shadow-xl shadow-black/10 md:p-8`}>
+          <div className="mb-4 text-5xl">🌍</div>
+          <h2 className="text-2xl font-black tracking-tight">Start exploring weather history</h2>
+          <p className={`mx-auto mt-3 max-w-xl ${mutedText}`}>
+            Choose a city and a date to see what the weather was like. Add a comparison date to reveal differences with charts and insights.
+          </p>
+          <div className="mt-5 flex flex-wrap justify-center gap-2 text-sm">
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try Oslo</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try London</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try Tokyo</span>
+            <span className={`${comparisonBox} rounded-full px-3 py-1`}>Try Madrid</span>
+          </div>
+        </div>
+      )}
+
+      <div
+        ref={resultsRef}
+        className="mt-10 flex w-full max-w-5xl flex-col justify-center gap-6 md:flex-row"
+      >
         {weather && place && (
           <div className={`${cardBackground} w-full max-w-md rounded-2xl p-6 shadow-xl shadow-black/10 transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl hover:shadow-blue-500/10 md:p-8`}>
             <div className="mb-4 text-6xl">
@@ -381,6 +422,12 @@ export default function Home() {
           <ChartSection title="💨 Max Wind km/h" dataKey="wind" color="#22c55e" chartData={chartData} isLast />
         </div>
       )}
+
+      <footer className={`mt-14 pb-4 text-center text-sm ${mutedText}`}>
+        <p className="font-semibold">WeatherReplay</p>
+        <p className="mt-1">Historical weather comparisons powered by Open-Meteo data.</p>
+        <p className="mt-1">Built as a modern weather history tool.</p>
+      </footer>
     </main>
   );
 }
