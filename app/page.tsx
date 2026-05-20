@@ -48,6 +48,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [darkMode, setDarkMode] = useState(false);
+  const [shareMessage, setShareMessage] = useState("");
   const resultsRef = useRef<HTMLDivElement | null>(null);
 
   const pageBackground = darkMode
@@ -97,6 +98,31 @@ export default function Home() {
     );
 
     return response.json();
+  };
+
+  const handleShare = async () => {
+    const shareText = place
+      ? `Check out this historical weather comparison for ${place.name} on WeatherReplay.`
+      : "Check out WeatherReplay, a modern historical weather comparison app.";
+
+    const shareData = {
+      title: "WeatherReplay",
+      text: shareText,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        setShareMessage("Link copied to clipboard");
+        setTimeout(() => setShareMessage(""), 2500);
+      }
+    } catch {
+      setShareMessage("Sharing was cancelled");
+      setTimeout(() => setShareMessage(""), 2500);
+    }
   };
 
   const handleCheckWeather = async () => {
@@ -223,15 +249,38 @@ export default function Home() {
       : [];
 
   return (
-    <main className={`min-h-screen flex flex-col items-center justify-start px-4 py-10 md:p-10 ${pageBackground}`}>
-      <button
-        onClick={() => setDarkMode(!darkMode)}
-        className={`mb-6 rounded-full px-5 py-2 text-sm font-semibold transition ${
-          darkMode ? "bg-white text-gray-900" : "bg-gray-900 text-white"
-        }`}
-      >
-        {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-      </button>
+    <main className={`min-h-screen flex flex-col items-center justify-start px-4 py-6 md:p-10 ${pageBackground}`}>
+      <header className={`${cardBackground} mb-10 flex w-full max-w-6xl items-center justify-between rounded-2xl px-4 py-3 shadow-xl shadow-black/10 md:px-6`}>
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-2xl shadow-lg">
+            🌦️
+          </div>
+          <div>
+            <p className="text-lg font-black leading-none tracking-tight">WeatherReplay</p>
+            <p className={`text-xs ${mutedText}`}>Historical weather insights</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleShare}
+            className={`hidden rounded-full px-4 py-2 text-sm font-semibold transition md:block ${
+              darkMode ? "bg-white/10 hover:bg-white/20" : "bg-white/80 hover:bg-white"
+            }`}
+          >
+            Share
+          </button>
+
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
+              darkMode ? "bg-white text-gray-900" : "bg-gray-900 text-white"
+            }`}
+          >
+            {darkMode ? "☀️" : "🌙"}
+          </button>
+        </div>
+      </header>
 
       <h1 className="mb-4 text-center text-5xl font-black tracking-tight md:text-6xl">
         WeatherReplay
@@ -315,10 +364,25 @@ export default function Home() {
         </div>
       </div>
 
-      <p className={`mt-6 flex items-center gap-2 text-sm ${mutedText}`}>
-        <span>🛡️</span>
-        All data is historical and sourced from reliable weather APIs.
-      </p>
+      <div className="mt-6 flex flex-col items-center gap-3 text-center">
+        <p className={`flex items-center gap-2 text-sm ${mutedText}`}>
+          <span>🛡️</span>
+          All data is historical and sourced from reliable weather APIs.
+        </p>
+
+        <button
+          onClick={handleShare}
+          className={`rounded-full px-5 py-2 text-sm font-semibold shadow-lg transition hover:scale-[1.02] md:hidden ${
+            darkMode ? "bg-white text-gray-900" : "bg-gray-900 text-white"
+          }`}
+        >
+          Share WeatherReplay
+        </button>
+
+        {shareMessage && (
+          <p className="text-sm font-semibold text-blue-500">{shareMessage}</p>
+        )}
+      </div>
 
       {error && (
         <div className="mt-6 rounded-xl bg-red-100 p-4 text-red-700">
@@ -424,7 +488,10 @@ export default function Home() {
       )}
 
       <footer className={`mt-14 pb-4 text-center text-sm ${mutedText}`}>
-        <p className="font-semibold">WeatherReplay</p>
+        <div className="mb-3 flex items-center justify-center gap-2">
+          <span className="text-xl">🌦️</span>
+          <p className="font-bold">WeatherReplay</p>
+        </div>
         <p className="mt-1">Historical weather comparisons powered by Open-Meteo data.</p>
         <p className="mt-1">Built as a modern weather history tool.</p>
       </footer>
