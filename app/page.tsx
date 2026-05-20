@@ -375,7 +375,13 @@ if (!location) {
   location = geoData.results[0];
 }
 
-setPlace(location);
+      if (!location) {
+        setError("City not found");
+        setLoading(false);
+        return;
+      }
+
+      setPlace(location);
 
       const weatherData = await fetchWeather(location, date);
       setWeather(weatherData);
